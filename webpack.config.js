@@ -6,8 +6,8 @@ var ExtractTextPlugin = require('extract-text-webpack-plugin')
 var common = {
 	entry: './src/main.js',
 	output: {
-		path: path.resolve(__dirname, './public'),
-		publicPath: '/public',
+		path: path.resolve(__dirname, './dist'),
+		publicPath: '/dist',
 		filename: 'build.js'
 	},
 	resolveLoader: {
@@ -21,17 +21,17 @@ var common = {
 			},
 			{
 				test: /\.js$/,
-				loader: 'bebel',
+				loader: 'babel',
 				exclude: /node_modules/
 			},
-			{
-				test: /\.scss$/,
-				loader: ExtractTextPlugin.extract("style-loader", "css-loader!sass-loader")
-			},
-			{
-				test: /\.css$/,
-				loader: ExtractTextPlugin.extract("style-loader", "css-loader")
-			},
+      {
+        test: /\.css$/,
+        loader: ExtractTextPlugin.extract('style-loader', 'css-loader!autoprefixer-loader?{browsers:["> 1%", "Firefox 15"]}')
+      }, 
+      {
+        test: /\.scss$/,
+        loader: ExtractTextPlugin.extract('style-loader', 'css-loader!sass-loader!autoprefixer-loader?{browsers:["> 1%", "Firefox 15"]}')
+      },
 			{
 				test: /\.json$/,
 				loader: 'json'
@@ -44,7 +44,7 @@ var common = {
 				test: /\.(png|jpg|gif|svg)$/,
 				loader: 'url',
 				query: {
-					limit: 10000,
+					limit: 81920,
 					name: '[name].[ext]?[hash]'
 				}
 			},
@@ -56,7 +56,7 @@ var common = {
 	}
 }
 
-if(process.env.NODE_ENV === 'build') {
+if(process.env.NODE_ENV === 'development') {
 	module.exports = merge(common, {
 		devServer: {
 			historyApiFallback: true,
@@ -64,11 +64,14 @@ if(process.env.NODE_ENV === 'build') {
 		},
 		devtool: '#eval-source-map',
 		plugins: [
+      new webpack.DefinePlugin({
+        'process.env': {
+          NODE_ENV: JSON.stringify("development")
+        }
+      }),
+      new webpack.optimize.OccurenceOrderPlugin(),
       new webpack.HotModuleReplacementPlugin(),
-      new ExtractTextPlugin("style.css", {
-        allChunks: true,
-        disable: false
-      })
+      new webpack.NoErrorsPlugin()
 		]
 	})
 }
@@ -76,6 +79,12 @@ if(process.env.NODE_ENV === 'build') {
 if(process.env.NODE_ENV === 'production') {
 	module.exports = merge(common, {
 		devtool: '#source-map',
+		vue: {
+			loader: {
+				css: ExtractTextPlugin.extract('css!autoprefixer?{browsers:["> 1%", "Firefox 15"]}'),
+        scss: ExtractTextPlugin.extract('css!sass!autoprefixer?{browsers:["> 1%", "Firefox 15"]}')
+			}
+		},
 		plugins: [
 			new webpack.DefinePlugin({
 				'process.env': {
@@ -83,11 +92,8 @@ if(process.env.NODE_ENV === 'production') {
 				}
 			}),
 			new webpack.optimize.UglifyJsPlugin({
-				output: {
-					comments: false
-				},
 				compress: {
-					warning: false
+					warnings: false
 				}
 			}),
 			new webpack.optimize.OccurenceOrderPlugin(),

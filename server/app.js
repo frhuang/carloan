@@ -4,13 +4,15 @@ var favicon = require('serve-favicon')
 var logger = require('morgan')
 var cookieParser = require('cookie-parser')
 var bodyParser = require('body-parser')
+var swig = require('swig')
 
 var routes = require('./index')
 
 var app = express()
 
+app.engine('html', swig.renderFile);
 app.set('views', path.join(__dirname, '../'))
-app.set('view engine', 'jade')
+app.set('view engine', 'html')
 
 app.use(logger('dev'))
 app.use(bodyParser.json())
